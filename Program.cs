@@ -152,4 +152,3 @@ Console.WriteLine($"Games Played  : {totalGames}");
 Console.WriteLine($"Games Won     : {totalWins}");
 Console.WriteLine($"Games Lost    : {totalLosses}");
 Console.WriteLine($"Biggest Win   : {biggestWin}");
-Console.WriteLine("Thank you for playing!");
