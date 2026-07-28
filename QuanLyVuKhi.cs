@@ -1,545 +1,269 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
-namespace KiemTra.WeaponStoreManagement;
-
-public enum WeaponType
+enum WeaponType
 {
-    Sword = 1,
-    Bow = 2,
-    Staff = 3,
-    Dagger = 4,
-    Axe = 5
+    Sword = 1, Bow, Staff, Dagger, Axe
 }
 
-public class Weapon
+class Weapon
 {
-    public string Code { get; set; } = "";
-    public string Name { get; set; } = "";
-    public WeaponType Type { get; set; }
-    public int Damage { get; set; }
-    public decimal Price { get; set; }
-    public int StockQuantity { get; set; }
+    public string Code;
+    public string Name;
+    public WeaponType Type;
+    public int Damage;
+    public decimal Price;
+    public int Stock;
 
     public void Display()
     {
         Console.WriteLine(
             $"{Code,-8} {Name,-20} {Type,-10} " +
-            $"{Damage,-12} {Price,-12:N0} {StockQuantity}"
+            $"{Damage,-10} {Price,-10:N0} {Stock}"
         );
     }
 }
 
-public class InventoryWeapon
+class InventoryItem
 {
-    public Weapon Weapon { get; set; } = new Weapon();
-    public int Quantity { get; set; }
+    public Weapon Weapon;
+    public int Quantity;
 }
 
-public class Player
+class Player
 {
-    public string Name { get; set; } = "";
-    public decimal Money { get; set; }
-
-    public List<InventoryWeapon> Inventory { get; set; }
-        = new List<InventoryWeapon>();
+    public string Name;
+    public decimal Money;
+    public List<InventoryItem> Inventory = new();
 }
 
-public class WeaponStoreManager
+class Program
 {
-    static List<Weapon> store = new List<Weapon>();
-    static Player player = new Player();
+    static List<Weapon> store = new();
+    static Player player = new();
+    const decimal SELL_RATE = 0.6m;
 
-    public static void Run()
+    static void Main()
     {
-        InitializeStore();
+        InitStore();
         CreatePlayer();
 
         while (true)
         {
-            DisplayMenu();
+            Menu();
 
-            int choice = ReadInteger(
-                "Choose an option: ",
-                0,
-                6
-            );
+            int c = ReadInt("Choose: ", 0, 6);
 
-            switch (choice)
+            switch (c)
             {
-                case 1:
-                    DisplayStore();
-                    break;
-
-                case 2:
-                    SearchWeaponByName();
-                    break;
-
-                case 3:
-                    BuyWeapon();
-                    break;
-
-                case 4:
-                    DisplayInventory();
-                    break;
-
-                case 5:
-                    SellWeapon();
-                    break;
-
-                case 6:
-                    FindStrongestAffordableWeapon();
-                    break;
-
-                case 0:
-                    return;
+                case 1: ShowStore(); break;
+                case 2: SearchWeapon(); break;
+                case 3: Buy(); break;
+                case 4: ShowInventory(); break;
+                case 5: Sell(); break;
+                case 6: StrongestAffordable(); break;
+                case 0: return;
             }
         }
     }
 
-    static void InitializeStore()
+    // ---------- Setup ----------
+
+    static void InitStore()
     {
-        // Clear previous data before restarting
-        store.Clear();
-
-        store.Add(new Weapon
+        store = new List<Weapon>
         {
-            Code = "W01",
-            Name = "Iron Sword",
-            Type = WeaponType.Sword,
-            Damage = 30,
-            Price = 300,
-            StockQuantity = 5
-        });
-
-        store.Add(new Weapon
-        {
-            Code = "W02",
-            Name = "Wind Bow",
-            Type = WeaponType.Bow,
-            Damage = 45,
-            Price = 500,
-            StockQuantity = 4
-        });
-
-        store.Add(new Weapon
-        {
-            Code = "W03",
-            Name = "Fire Staff",
-            Type = WeaponType.Staff,
-            Damage = 70,
-            Price = 800,
-            StockQuantity = 2
-        });
-
-        store.Add(new Weapon
-        {
-            Code = "W04",
-            Name = "Dagger",
-            Type = WeaponType.Dagger,
-            Damage = 25,
-            Price = 200,
-            StockQuantity = 6
-        });
-
-        store.Add(new Weapon
-        {
-            Code = "W05",
-            Name = "Battle Axe",
-            Type = WeaponType.Axe,
-            Damage = 90,
-            Price = 1200,
-            StockQuantity = 1
-        });
+            new() { Code="W01", Name="Iron Sword", Type=WeaponType.Sword, Damage=30, Price=300, Stock=5 },
+            new() { Code="W02", Name="Wind Bow", Type=WeaponType.Bow, Damage=45, Price=500, Stock=4 },
+            new() { Code="W03", Name="Fire Staff", Type=WeaponType.Staff, Damage=70, Price=800, Stock=2 },
+            new() { Code="W04", Name="Dagger", Type=WeaponType.Dagger, Damage=25, Price=200, Stock=6 },
+            new() { Code="W05", Name="Battle Axe", Type=WeaponType.Axe, Damage=90, Price=1200, Stock=1 }
+        };
     }
 
     static void CreatePlayer()
     {
-        Console.WriteLine("\n===== CREATE PLAYER =====");
-
-        player = new Player();
-
-        player.Name = ReadString(
-            "Enter player name: "
-        );
-
-        player.Money = ReadDecimal(
-            "Enter starting money: ",
-            0
-        );
+        Console.WriteLine("\n=== CREATE PLAYER ===");
+        player.Name = ReadString("Name: ");
+        player.Money = ReadDecimal("Money: ", 0);
     }
 
-    static void DisplayMenu()
+    // ---------- Menu ----------
+
+    static void Menu()
     {
-        Console.WriteLine(
-            $"\n===== WEAPON STORE ====="
-        );
-
-        Console.WriteLine(
-            $"Player: {player.Name}"
-        );
-
-        Console.WriteLine(
-            $"Money: {player.Money:N0}"
-        );
-
-        Console.WriteLine("1. Display Store");
-        Console.WriteLine("2. Search Weapon by Name");
-        Console.WriteLine("3. Buy Weapon");
-        Console.WriteLine("4. Display Inventory");
-        Console.WriteLine("5. Sell Weapon");
-        Console.WriteLine("6. Strongest Affordable Weapon");
+        Console.WriteLine("\n=== STORE ===");
+        Console.WriteLine($"Player: {player.Name} | Money: {player.Money:N0}");
+        Console.WriteLine("1. Store");
+        Console.WriteLine("2. Search");
+        Console.WriteLine("3. Buy");
+        Console.WriteLine("4. Inventory");
+        Console.WriteLine("5. Sell");
+        Console.WriteLine("6. Strongest Affordable");
         Console.WriteLine("0. Exit");
     }
 
-    static void DisplayStore()
+    // ---------- Features ----------
+
+    static void ShowStore()
     {
-        Console.WriteLine("\n===== WEAPON LIST =====");
-
         PrintHeader();
-
-        for (int i = 0; i < store.Count; i++)
-        {
-            store[i].Display();
-        }
+        store.ForEach(w => w.Display());
     }
 
-    static void SearchWeaponByName()
+    static void SearchWeapon()
     {
-        string keyword = ReadString(
-            "Enter weapon name or part of the name: "
-        );
+        string key = ReadString("Search: ");
 
-        bool found = false;
+        var result = store
+            .Where(w => w.Name.Contains(key, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        if (result.Count == 0)
+        {
+            Console.WriteLine("Not found.");
+            return;
+        }
 
         PrintHeader();
-
-        for (int i = 0; i < store.Count; i++)
-        {
-            if (store[i].Name.Contains(
-                    keyword,
-                    StringComparison.OrdinalIgnoreCase))
-            {
-                store[i].Display();
-                found = true;
-            }
-        }
-
-        if (!found)
-        {
-            Console.WriteLine("Weapon not found.");
-        }
+        result.ForEach(w => w.Display());
     }
 
-    static void BuyWeapon()
+    static void Buy()
     {
-        string code = ReadString(
-            "Enter weapon code to buy: "
-        );
+        string code = ReadString("Code: ");
 
-        int index = FindWeaponInStore(code);
+        var w = store.Find(x =>
+            x.Code.Equals(code, StringComparison.OrdinalIgnoreCase));
 
-        if (index == -1)
+        if (w == null)
         {
-            Console.WriteLine(
-                "Weapon code does not exist."
-            );
-
+            Console.WriteLine("Not found.");
             return;
         }
 
-        Weapon weapon = store[index];
-
-        if (weapon.StockQuantity <= 0)
+        if (w.Stock <= 0)
         {
-            Console.WriteLine("Weapon is out of stock.");
+            Console.WriteLine("Out of stock.");
             return;
         }
 
-        if (player.Money < weapon.Price)
+        if (player.Money < w.Price)
         {
-            Console.WriteLine(
-                "Player does not have enough money."
-            );
-
+            Console.WriteLine("Not enough money.");
             return;
         }
 
-        // Deduct money
-        player.Money -= weapon.Price;
+        player.Money -= w.Price;
+        w.Stock--;
 
-        // Reduce store stock
-        weapon.StockQuantity--;
+        var item = player.Inventory
+            .Find(i => i.Weapon.Code == w.Code);
 
-        int inventoryIndex =
-            FindWeaponInInventory(code);
-
-        // Increase quantity if already owned
-        if (inventoryIndex != -1)
-        {
-            player.Inventory[inventoryIndex]
-                .Quantity++;
-        }
+        if (item != null)
+            item.Quantity++;
         else
-        {
-            InventoryWeapon newWeapon =
-                new InventoryWeapon();
+            player.Inventory.Add(new InventoryItem { Weapon = w, Quantity = 1 });
 
-            newWeapon.Weapon = weapon;
-            newWeapon.Quantity = 1;
-
-            player.Inventory.Add(newWeapon);
-        }
-
-        Console.WriteLine(
-            $"Successfully purchased {weapon.Name}."
-        );
-
-        Console.WriteLine(
-            $"Remaining money: {player.Money:N0}"
-        );
+        Console.WriteLine($"Bought {w.Name}");
     }
 
-    static void DisplayInventory()
+    static void ShowInventory()
     {
         if (player.Inventory.Count == 0)
         {
-            Console.WriteLine("Inventory is empty.");
+            Console.WriteLine("Empty.");
             return;
         }
 
-        Console.WriteLine("\n===== INVENTORY =====");
-
-        Console.WriteLine(
-            $"{"Code",-8} {"Name",-20} " +
-            $"{"Quantity",-12} {"Sell Price"}"
-        );
-
-        for (int i = 0;
-             i < player.Inventory.Count;
-             i++)
+        Console.WriteLine("\nCode     Name                 Qty   Sell");
+        foreach (var i in player.Inventory)
         {
-            InventoryWeapon item =
-                player.Inventory[i];
-
-            decimal sellPrice =
-                item.Weapon.Price * 60 / 100;
+            decimal sell = i.Weapon.Price * SELL_RATE;
 
             Console.WriteLine(
-                $"{item.Weapon.Code,-8} " +
-                $"{item.Weapon.Name,-20} " +
-                $"{item.Quantity,-12} " +
-                $"{sellPrice:N0}"
+                $"{i.Weapon.Code,-8} {i.Weapon.Name,-20} {i.Quantity,-5} {sell:N0}"
             );
         }
     }
 
-    static void SellWeapon()
+    static void Sell()
     {
-        string code = ReadString(
-            "Enter weapon code to sell: "
-        );
+        string code = ReadString("Code: ");
 
-        int inventoryIndex =
-            FindWeaponInInventory(code);
+        var item = player.Inventory
+            .Find(i => i.Weapon.Code.Equals(code, StringComparison.OrdinalIgnoreCase));
 
-        if (inventoryIndex == -1)
+        if (item == null)
         {
-            Console.WriteLine(
-                "Player does not own this weapon."
-            );
-
+            Console.WriteLine("You don't own this.");
             return;
         }
 
-        InventoryWeapon item =
-            player.Inventory[inventoryIndex];
+        decimal sell = item.Weapon.Price * SELL_RATE;
 
-        decimal sellPrice =
-            item.Weapon.Price * 60 / 100;
-
-        // Add money to player
-        player.Money += sellPrice;
-
-        // Reduce inventory quantity
+        player.Money += sell;
         item.Quantity--;
+        item.Weapon.Stock++;
 
-        // Increase store stock
-        item.Weapon.StockQuantity++;
-
-        // Remove if quantity reaches zero
         if (item.Quantity == 0)
-        {
-            player.Inventory.RemoveAt(
-                inventoryIndex
-            );
-        }
+            player.Inventory.Remove(item);
 
-        Console.WriteLine(
-            $"Sold {item.Weapon.Name}."
-        );
-
-        Console.WriteLine(
-            $"Received: {sellPrice:N0}"
-        );
-
-        Console.WriteLine(
-            $"Current money: {player.Money:N0}"
-        );
+        Console.WriteLine($"Sold {item.Weapon.Name} (+{sell:N0})");
     }
 
-    static void FindStrongestAffordableWeapon()
+    static void StrongestAffordable()
     {
-        Weapon? strongestWeapon = null;
+        var w = store
+            .Where(x => x.Stock > 0 && x.Price <= player.Money)
+            .OrderByDescending(x => x.Damage)
+            .FirstOrDefault();
 
-        for (int i = 0; i < store.Count; i++)
+        if (w == null)
         {
-            Weapon weapon = store[i];
-
-            bool inStock = weapon.StockQuantity > 0;
-
-            bool affordable =
-                weapon.Price <= player.Money;
-
-            if (inStock && affordable)
-            {
-                if (strongestWeapon == null ||
-                    weapon.Damage >
-                    strongestWeapon.Damage)
-                {
-                    strongestWeapon = weapon;
-                }
-            }
-        }
-
-        if (strongestWeapon == null)
-        {
-            Console.WriteLine(
-                "There are no weapons in stock that you can afford."
-            );
-
+            Console.WriteLine("No weapon available.");
             return;
         }
-
-        Console.WriteLine(
-            "The strongest weapon you can afford:"
-        );
 
         PrintHeader();
-        strongestWeapon.Display();
+        w.Display();
     }
 
-    static int FindWeaponInStore(
-        string code)
-    {
-        for (int i = 0; i < store.Count; i++)
-        {
-            if (store[i].Code.Equals(
-                    code,
-                    StringComparison.OrdinalIgnoreCase))
-            {
-                return i;
-            }
-        }
+    // ---------- Helpers ----------
 
-        return -1;
+    static string ReadString(string msg)
+    {
+        Console.Write(msg);
+        return (Console.ReadLine() ?? "").Trim();
     }
 
-    static int FindWeaponInInventory(
-        string code)
+    static int ReadInt(string msg, int min, int max)
     {
-        for (int i = 0;
-             i < player.Inventory.Count;
-             i++)
-        {
-            if (player.Inventory[i]
-                .Weapon.Code.Equals(
-                    code,
-                    StringComparison.OrdinalIgnoreCase))
-            {
-                return i;
-            }
-        }
-
-        return -1;
-    }
-
-    static string ReadString(string message)
-    {
+        int x;
         while (true)
         {
-            Console.Write(message);
-
-            string input =
-                (Console.ReadLine() ?? "").Trim();
-
-            if (input != "")
-            {
-                return input;
-            }
-
-            Console.WriteLine(
-                "Input cannot be empty."
-            );
+            Console.Write(msg);
+            if (int.TryParse(Console.ReadLine(), out x) && x >= min && x <= max)
+                return x;
         }
     }
 
-    static int ReadInteger(
-        string message,
-        int minValue,
-        int maxValue)
+    static decimal ReadDecimal(string msg, decimal min)
     {
+        decimal x;
         while (true)
         {
-            Console.Write(message);
-
-            int value;
-
-            if (int.TryParse(
-                    Console.ReadLine(),
-                    out value) &&
-                value >= minValue &&
-                value <= maxValue)
-            {
-                return value;
-            }
-
-            Console.WriteLine(
-                "Invalid input."
-            );
-        }
-    }
-
-    static decimal ReadDecimal(
-        string message,
-        decimal minValue)
-    {
-        while (true)
-        {
-            Console.Write(message);
-
-            decimal value;
-
-            if (decimal.TryParse(
-                    Console.ReadLine(),
-                    out value) &&
-                value >= minValue)
-            {
-                return value;
-            }
-
-            Console.WriteLine(
-                "Invalid input."
-            );
+            Console.Write(msg);
+            if (decimal.TryParse(Console.ReadLine(), out x) && x >= min)
+                return x;
         }
     }
 
     static void PrintHeader()
     {
         Console.WriteLine(
-            $"{"Code",-8} {"Name",-20} " +
-            $"{"Type",-10} {"Damage",-12} " +
-            $"{"Price",-12} {"Stock"}"
+            $"{"Code",-8} {"Name",-20} {"Type",-10} {"Dmg",-10} {"Price",-10} {"Stock"}"
         );
     }
 }
