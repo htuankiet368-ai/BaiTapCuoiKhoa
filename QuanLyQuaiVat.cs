@@ -1,585 +1,247 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
-namespace KiemTra.MonsterArmyManagement;
-
-public class Monster
+class Monster
 {
-    public string Id { get; set; } = "";
-    public string Name { get; set; } = "";
-    public string Species { get; set; } = "";
-    public int Level { get; set; }
-    public int Health { get; set; }
-    public int Damage { get; set; }
-    public int RewardExperience { get; set; }
+    public string Id;
+    public string Name;
+    public string Species;
+    public int Level;
+    public int Health;
+    public int Damage;
+    public int RewardExp;
 
-    public int CalculatePower()
-    {
-        return Health + Damage * 2;
-    }
+    public int Power => Health + Damage * 2;
 
-    public void LevelUpOnce()
+    public void LevelUp()
     {
         Level++;
-
-        Health = (int)Math.Ceiling(
-            Health * 1.10
-        );
-
-        Damage = (int)Math.Ceiling(
-            Damage * 1.05
-        );
-
-        RewardExperience = (int)Math.Ceiling(
-            RewardExperience * 1.08
-        );
+        Health = (int)Math.Ceiling(Health * 1.10);
+        Damage = (int)Math.Ceiling(Damage * 1.05);
+        RewardExp = (int)Math.Ceiling(RewardExp * 1.08);
     }
 
     public void Display()
     {
         Console.WriteLine(
             $"{Id,-10} {Name,-18} {Species,-15} " +
-            $"{Level,-8} {Health,-8} " +
-            $"{Damage,-12} " +
-            $"{RewardExperience,-12} " +
-            $"{CalculatePower()}"
+            $"{Level,-8} {Health,-8} {Damage,-10} {RewardExp,-12} {Power}"
         );
     }
 }
 
-public class MonsterArmyManagement
+class Program
 {
-    static List<Monster> monsterList
-        = new List<Monster>();
+    static List<Monster> monsters = new List<Monster>();
+    static Random rand = new Random();
 
-    static Random random = new Random();
-
-    public static void Run()
+    static void Main()
     {
         while (true)
         {
-            DisplayMenu();
+            Console.WriteLine("\n===== MONSTER =====");
+            Console.WriteLine("1. Add");
+            Console.WriteLine("2. Display");
+            Console.WriteLine("3. Find by ID");
+            Console.WriteLine("4. Find by Species");
+            Console.WriteLine("5. Level Up");
+            Console.WriteLine("6. Remove Dead");
+            Console.WriteLine("7. Sort by Level");
+            Console.WriteLine("8. Strongest");
+            Console.WriteLine("9. Select by Player Level");
+            Console.WriteLine("0. Exit");
 
-            int choice = ReadInteger(
-                "Choose a function: ",
-                0,
-                9
-            );
+            int c = ReadInt("Choose: ", 0, 9);
 
-            switch (choice)
+            switch (c)
             {
-                case 1:
-                    AddMonster();
-                    break;
-
-                case 2:
-                    DisplayMonsterList();
-                    break;
-
-                case 3:
-                    FindMonsterById();
-                    break;
-
-                case 4:
-                    FindMonsterBySpecies();
-                    break;
-
-                case 5:
-                    UpdateMonsterLevel();
-                    break;
-
-                case 6:
-                    RemoveDeadMonsters();
-                    break;
-
-                case 7:
-                    SortByLevelDescending();
-                    break;
-
-                case 8:
-                    DisplayStrongestMonster();
-                    break;
-
-                case 9:
-                    SelectMonsterByPlayerLevel();
-                    break;
-
-                case 0:
-                    return;
+                case 1: Add(); break;
+                case 2: Show(monsters); break;
+                case 3: FindById(); break;
+                case 4: FindBySpecies(); break;
+                case 5: LevelUpMonster(); break;
+                case 6: RemoveDead(); break;
+                case 7: SortByLevel(); break;
+                case 8: Strongest(); break;
+                case 9: SelectByPlayerLevel(); break;
+                case 0: return;
             }
         }
     }
 
-    static void DisplayMenu()
+    static void Add()
     {
-        Console.WriteLine(
-            "\n===== MONSTER ARMY MANAGEMENT ====="
-        );
+        string id;
+        do
+        {
+            id = ReadString("ID: ");
+        } while (monsters.Any(m => m.Id.Equals(id, StringComparison.OrdinalIgnoreCase)));
 
-        Console.WriteLine("1. Add Monster");
-        Console.WriteLine("2. Display Monster List");
-        Console.WriteLine("3. Find Monster by ID");
-        Console.WriteLine("4. Find Monster by Species");
-        Console.WriteLine("5. Update Monster Level");
-        Console.WriteLine("6. Remove Monsters with 0 Health");
-        Console.WriteLine("7. Sort by Level (Descending)");
-        Console.WriteLine("8. Display Strongest Monster");
-        Console.WriteLine("9. Select Monster Based on Player Level");
-        Console.WriteLine("0. Exit");
+        Monster m = new Monster
+        {
+            Id = id,
+            Name = ReadString("Name: "),
+            Species = ReadString("Species: "),
+            Level = ReadInt("Level: ", 1, int.MaxValue),
+            Health = ReadInt("Health: ", 0, int.MaxValue),
+            Damage = ReadInt("Damage: ", 0, int.MaxValue),
+            RewardExp = ReadInt("Reward EXP: ", 0, int.MaxValue)
+        };
+
+        monsters.Add(m);
     }
 
-    static void AddMonster()
+    static void Show(List<Monster> list)
     {
-        string id = ReadString(
-            "Enter monster ID: "
-        );
-
-        if (FindIndexById(id) != -1)
+        if (list.Count == 0)
         {
-            Console.WriteLine(
-                "Monster ID already exists."
-            );
-
+            Console.WriteLine("No monsters.");
             return;
         }
 
-        Monster monster = new Monster();
-
-        monster.Id = id;
-
-        monster.Name = ReadString(
-            "Enter monster name: "
-        );
-
-        monster.Species = ReadString(
-            "Enter monster species: "
-        );
-
-        monster.Level = ReadInteger(
-            "Enter level: ",
-            1,
-            int.MaxValue
-        );
-
-        monster.Health = ReadInteger(
-            "Enter health: ",
-            0,
-            int.MaxValue
-        );
-
-        monster.Damage = ReadInteger(
-            "Enter damage: ",
-            0,
-            int.MaxValue
-        );
-
-        monster.RewardExperience =
-            ReadInteger(
-                "Enter reward experience: ",
-                0,
-                int.MaxValue
-            );
-
-        monsterList.Add(monster);
-
-        Console.WriteLine(
-            "Monster added successfully."
-        );
+        Header();
+        foreach (var m in list) m.Display();
     }
 
-    static void DisplayMonsterList()
+    static void FindById()
     {
-        if (monsterList.Count == 0)
-        {
-            Console.WriteLine(
-                "The monster list is empty."
-            );
+        string id = ReadString("ID: ");
 
+        var m = monsters.FirstOrDefault(x =>
+            x.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
+
+        if (m == null)
+        {
+            Console.WriteLine("Not found.");
             return;
         }
 
-        Console.WriteLine(
-            "\n===== MONSTER LIST ====="
-        );
-
-        PrintHeader();
-
-        for (int i = 0; i < monsterList.Count; i++)
-        {
-            monsterList[i].Display();
-        }
+        Header();
+        m.Display();
     }
 
-    static void FindMonsterById()
+    static void FindBySpecies()
     {
-        string id = ReadString(
-            "Enter monster ID to search: "
-        );
+        string key = ReadString("Species: ");
 
-        int index = FindIndexById(id);
+        var list = monsters
+            .Where(m => m.Species.Contains(key, StringComparison.OrdinalIgnoreCase))
+            .ToList();
 
-        if (index == -1)
+        if (list.Count == 0)
         {
-            Console.WriteLine(
-                "Monster not found."
-            );
-
+            Console.WriteLine("No match.");
             return;
         }
 
-        Console.WriteLine(
-            "Monster found:"
-        );
-
-        PrintHeader();
-        monsterList[index].Display();
+        Show(list);
     }
 
-    static void FindMonsterBySpecies()
+    static void LevelUpMonster()
     {
-        string keyword = ReadString(
-            "Enter species to search: "
-        );
+        string id = ReadString("ID: ");
 
-        bool found = false;
+        var m = monsters.FirstOrDefault(x =>
+            x.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
 
-        PrintHeader();
-
-        for (int i = 0; i < monsterList.Count; i++)
+        if (m == null)
         {
-            if (monsterList[i].Species.Contains(
-                    keyword,
-                    StringComparison.OrdinalIgnoreCase))
-            {
-                monsterList[i].Display();
-                found = true;
-            }
-        }
-
-        if (!found)
-        {
-            Console.WriteLine(
-                "No monsters of this species found."
-            );
-        }
-    }
-
-    static void UpdateMonsterLevel()
-    {
-        string id = ReadString(
-            "Enter monster ID: "
-        );
-
-        int index = FindIndexById(id);
-
-        if (index == -1)
-        {
-            Console.WriteLine(
-                "Monster not found."
-            );
-
+            Console.WriteLine("Not found.");
             return;
         }
 
-        Monster monster = monsterList[index];
+        int newLv = ReadInt("New level: ", m.Level, int.MaxValue);
+        int diff = newLv - m.Level;
 
-        Console.WriteLine(
-            $"Current level: {monster.Level}"
-        );
+        for (int i = 0; i < diff; i++)
+            m.LevelUp();
 
-        int newLevel = ReadInteger(
-            "Enter new level: ",
-            monster.Level,
-            int.MaxValue
-        );
+        Console.WriteLine($"+{diff} level(s)");
+        Header();
+        m.Display();
+    }
 
-        int levelsGained =
-            newLevel - monster.Level;
+    static void RemoveDead()
+    {
+        int removed = monsters.RemoveAll(m => m.Health == 0);
+        Console.WriteLine($"Removed {removed}");
+    }
 
-        if (levelsGained == 0)
+    static void SortByLevel()
+    {
+        monsters = monsters
+            .OrderByDescending(m => m.Level)
+            .ToList();
+
+        Console.WriteLine("Sorted.");
+        Show(monsters);
+    }
+
+    static void Strongest()
+    {
+        if (monsters.Count == 0) return;
+
+        int max = monsters.Max(m => m.Power);
+
+        var list = monsters
+            .Where(m => m.Power == max)
+            .ToList();
+
+        Header();
+        foreach (var m in list) m.Display();
+    }
+
+    static void SelectByPlayerLevel()
+    {
+        if (monsters.Count == 0) return;
+
+        int p = ReadInt("Player level: ", 1, int.MaxValue);
+
+        int min = Math.Max(1, p - 2);
+        int max = p + 2;
+
+        var list = monsters
+            .Where(m => m.Level >= min && m.Level <= max && m.Health > 0)
+            .ToList();
+
+        if (list.Count == 0)
         {
-            Console.WriteLine(
-                "Level unchanged."
-            );
-
+            Console.WriteLine("No suitable monsters.");
             return;
         }
 
-        for (int i = 0; i < levelsGained; i++)
-        {
-            monster.LevelUpOnce();
-        }
+        var chosen = list[rand.Next(list.Count)];
 
-        Console.WriteLine(
-            $"Increased by {levelsGained} level(s)."
-        );
-
-        Console.WriteLine(
-            "Health increases by 10% per level."
-        );
-
-        Console.WriteLine(
-            "Damage increases by 5% per level."
-        );
-
-        Console.WriteLine(
-            "Reward experience increases by 8% per level."
-        );
-
-        PrintHeader();
-        monster.Display();
+        Console.WriteLine($"Range: {min}-{max}");
+        Header();
+        chosen.Display();
     }
 
-    static void RemoveDeadMonsters()
+    // ---------- Helpers ----------
+
+    static string ReadString(string msg)
     {
-        int removedCount = 0;
-
-        for (int i = monsterList.Count - 1;
-             i >= 0;
-             i--)
-        {
-            if (monsterList[i].Health == 0)
-            {
-                monsterList.RemoveAt(i);
-                removedCount++;
-            }
-        }
-
-        Console.WriteLine(
-            $"Removed {removedCount} monster(s)."
-        );
+        Console.Write(msg);
+        return (Console.ReadLine() ?? "").Trim();
     }
 
-    static void SortByLevelDescending()
+    static int ReadInt(string msg, int min, int max)
     {
-        if (monsterList.Count == 0)
-        {
-            Console.WriteLine(
-                "The monster list is empty."
-            );
-
-            return;
-        }
-
-        for (int i = 0;
-             i < monsterList.Count - 1;
-             i++)
-        {
-            for (int j = i + 1;
-                 j < monsterList.Count;
-                 j++)
-            {
-                if (monsterList[i].Level
-                    < monsterList[j].Level)
-                {
-                    Monster temp = monsterList[i];
-                    monsterList[i] = monsterList[j];
-                    monsterList[j] = temp;
-                }
-            }
-        }
-
-        Console.WriteLine(
-            "Sorted by level in descending order."
-        );
-
-        DisplayMonsterList();
-    }
-
-    static void DisplayStrongestMonster()
-    {
-        if (monsterList.Count == 0)
-        {
-            Console.WriteLine(
-                "The monster list is empty."
-            );
-
-            return;
-        }
-
-        int highestPower =
-            monsterList[0].CalculatePower();
-
-        for (int i = 1;
-             i < monsterList.Count;
-             i++)
-        {
-            if (monsterList[i].CalculatePower()
-                > highestPower)
-            {
-                highestPower =
-                    monsterList[i].CalculatePower();
-            }
-        }
-
-        Console.WriteLine(
-            "\n===== STRONGEST MONSTER ====="
-        );
-
-        PrintHeader();
-
-        for (int i = 0;
-             i < monsterList.Count;
-             i++)
-        {
-            if (monsterList[i].CalculatePower()
-                == highestPower)
-            {
-                monsterList[i].Display();
-            }
-        }
-    }
-
-    static void SelectMonsterByPlayerLevel()
-    {
-        if (monsterList.Count == 0)
-        {
-            Console.WriteLine(
-                "The monster list is empty."
-            );
-
-            return;
-        }
-
-        int playerLevel = ReadInteger(
-            "Enter player level: ",
-            1,
-            int.MaxValue
-        );
-
-        int minLevel = playerLevel - 2;
-
-        if (minLevel < 1)
-        {
-            minLevel = 1;
-        }
-
-        int maxLevel =
-            playerLevel + 2;
-
-        List<Monster> suitableMonsters =
-            new List<Monster>();
-
-        for (int i = 0;
-             i < monsterList.Count;
-             i++)
-        {
-            bool levelMatch =
-                monsterList[i].Level >= minLevel
-                &&
-                monsterList[i].Level <= maxLevel;
-
-            bool alive =
-                monsterList[i].Health > 0;
-
-            if (levelMatch && alive)
-            {
-                suitableMonsters.Add(
-                    monsterList[i]
-                );
-            }
-        }
-
-        if (suitableMonsters.Count == 0)
-        {
-            Console.WriteLine(
-                "No suitable monsters found."
-            );
-
-            return;
-        }
-
-        int randomIndex =
-            random.Next(suitableMonsters.Count);
-
-        Monster selectedMonster =
-            suitableMonsters[randomIndex];
-
-        Console.WriteLine(
-            $"Suitable level range: " +
-            $"{minLevel} to {maxLevel}"
-        );
-
-        Console.WriteLine(
-            "Randomly selected monster:"
-        );
-
-        PrintHeader();
-        selectedMonster.Display();
-    }
-
-    static int FindIndexById(string id)
-    {
-        for (int i = 0;
-             i < monsterList.Count;
-             i++)
-        {
-            if (monsterList[i].Id.Equals(
-                    id,
-                    StringComparison.OrdinalIgnoreCase))
-            {
-                return i;
-            }
-        }
-
-        return -1;
-    }
-
-    static string ReadString(string message)
-    {
+        int x;
         while (true)
         {
-            Console.Write(message);
-
-            string input =
-                (Console.ReadLine() ?? "").Trim();
-
-            if (input != "")
-            {
-                return input;
-            }
-
-            Console.WriteLine(
-                "Input cannot be empty."
-            );
+            Console.Write(msg);
+            if (int.TryParse(Console.ReadLine(), out x) && x >= min && x <= max)
+                return x;
         }
     }
 
-    static int ReadInteger(
-        string message,
-        int minValue,
-        int maxValue)
-    {
-        while (true)
-        {
-            Console.Write(message);
-
-            int value;
-
-            if (int.TryParse(
-                    Console.ReadLine(),
-                    out value)
-                &&
-                value >= minValue
-                &&
-                value <= maxValue)
-            {
-                return value;
-            }
-
-            Console.WriteLine(
-                "Invalid input."
-            );
-        }
-    }
-
-    static void PrintHeader()
+    static void Header()
     {
         Console.WriteLine(
             $"{"ID",-10} {"Name",-18} {"Species",-15} " +
-            $"{"Level",-8} {"Health",-8} " +
-            $"{"Damage",-12} {"Reward EXP",-12} " +
-            $"{"Power"}"
+            $"{"Level",-8} {"HP",-8} {"DMG",-10} {"EXP",-12} {"Power"}"
         );
     }
 }
