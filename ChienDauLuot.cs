@@ -1,408 +1,255 @@
 using System;
+using System.Collections.Generic;
 
-namespace KiemTra.TurnBasedBattleGame;
+namespace KiemTra.BauCuaGame;
 
-public class Player
+public enum Animal
 {
-    public string Name { get; set; } = "";
-    public int MaxHealth { get; set; }
-    public int CurrentHealth { get; set; }
-    public int Attack { get; set; }
-    public int Defense { get; set; }
-    public int PotionCount { get; set; }
-    public int Gold { get; set; }
-
-    public bool IsAlive()
-    {
-        return CurrentHealth > 0;
-    }
-
-    public void Display()
-    {
-        Console.WriteLine("\n===== PLAYER =====");
-        Console.WriteLine($"Name: {Name}");
-        Console.WriteLine($"Health: {CurrentHealth}/{MaxHealth}");
-        Console.WriteLine($"Attack: {Attack}");
-        Console.WriteLine($"Defense: {Defense}");
-        Console.WriteLine($"Potions: {PotionCount}");
-        Console.WriteLine($"Gold: {Gold}");
-    }
+    Gourd = 1,
+    Crab,
+    Shrimp,
+    Fish,
+    Chicken,
+    Deer
 }
 
-public class Monster
+public class Account
 {
     public string Name { get; set; } = "";
-    public int Health { get; set; }
-    public int Attack { get; set; }
-    public int Defense { get; set; }
-    public int GoldReward { get; set; }
-
-    public bool IsAlive()
-    {
-        return Health > 0;
-    }
-
-    public void Display()
-    {
-        Console.WriteLine("\n===== MONSTER =====");
-        Console.WriteLine($"Name: {Name}");
-        Console.WriteLine($"Health: {Math.Max(Health, 0)}");
-        Console.WriteLine($"Attack: {Attack}");
-        Console.WriteLine($"Defense: {Defense}");
-        Console.WriteLine($"Gold Reward: {GoldReward}");
-    }
+    public int Balance { get; set; } = 1000;
 }
 
-public class TurnBasedBattleGame
+public class Bet
+{
+    public Animal Animal { get; set; }
+    public int Amount { get; set; }
+}
+
+public class BauCuaGame
 {
     static Random random = new Random();
 
-    static Player player = new Player();
+    static Account account = new Account();
 
+    static int totalRounds;
     static int wins;
     static int losses;
-    static int escapes;
+    static int biggestWin;
 
     public static void Run()
     {
-        CreatePlayer();
+        CreateAccount();
 
         while (true)
         {
-            player.CurrentHealth = player.MaxHealth;
-
-            Monster monster = CreateRandomMonster();
-
-            Console.WriteLine(
-                $"\nA {monster.Name} has appeared!"
-            );
-
-            Battle(monster);
-
-            if (!AskYesNo("\nDo you want to play another battle?"))
+            if (account.Balance <= 0)
             {
-                DisplayStatistics();
+                Console.WriteLine("\nYou ran out of money!");
+                DisplayStats();
                 return;
             }
-        }
-    }
 
-    static void CreatePlayer()
-    {
-        Console.WriteLine("\n===== CREATE PLAYER =====");
+            DisplayMenu();
 
-        player = new Player();
-
-        player.Name = InputString(
-            "Enter player name: "
-        );
-
-        player.MaxHealth = InputInteger(
-            "Enter maximum health: ",
-            1,
-            int.MaxValue
-        );
-
-        player.CurrentHealth = player.MaxHealth;
-
-        player.Attack = InputInteger(
-            "Enter attack power: ",
-            1,
-            int.MaxValue
-        );
-
-        player.Defense = InputInteger(
-            "Enter defense: ",
-            0,
-            int.MaxValue
-        );
-
-        player.PotionCount = InputInteger(
-            "Enter number of healing potions: ",
-            0,
-            int.MaxValue
-        );
-
-        player.Gold = 0;
-
-        wins = 0;
-        losses = 0;
-        escapes = 0;
-    }
-
-    static Monster CreateRandomMonster()
-    {
-        string[] monsterNames =
-        {
-            "Slime",
-            "Goblin",
-            "Black Wolf",
-            "Orc",
-            "Skeleton"
-        };
-
-        Monster monster = new Monster();
-
-        monster.Name =
-            monsterNames[random.Next(monsterNames.Length)];
-
-        monster.Health = random.Next(50, 101);
-        monster.Attack = random.Next(10, 26);
-        monster.Defense = random.Next(0, 11);
-        monster.GoldReward = random.Next(20, 51);
-
-        return monster;
-    }
-
-    static void Battle(Monster monster)
-    {
-        while (player.IsAlive() && monster.IsAlive())
-        {
-            DisplayBattleMenu();
-
-            int choice = InputInteger(
-                "Choose an action: ",
-                1,
-                4
-            );
-
-            bool turnUsed = false;
+            int choice = InputInt("Choose: ", 0, 3);
 
             switch (choice)
             {
                 case 1:
-                    PlayerAttack(monster);
-                    turnUsed = true;
+                    PlayRound();
                     break;
 
                 case 2:
-                    turnUsed = UsePotion();
+                    Console.WriteLine($"Balance: {account.Balance}");
                     break;
 
                 case 3:
-                    player.Display();
-                    monster.Display();
+                    DisplayStats();
                     break;
 
-                case 4:
-                    Console.WriteLine(
-                        "You fled from the battle."
-                    );
-
-                    escapes++;
+                case 0:
+                    DisplayStats();
                     return;
-            }
-
-            if (!monster.IsAlive())
-            {
-                Console.WriteLine(
-                    $"\nYou defeated the {monster.Name}!"
-                );
-
-                Console.WriteLine(
-                    $"You received {monster.GoldReward} gold."
-                );
-
-                player.Gold += monster.GoldReward;
-                wins++;
-
-                return;
-            }
-
-            if (turnUsed)
-            {
-                MonsterAttack(monster);
-            }
-
-            if (!player.IsAlive())
-            {
-                Console.WriteLine(
-                    "\nThe player has been defeated."
-                );
-
-                losses++;
-                return;
             }
         }
     }
 
-    static void PlayerAttack(Monster monster)
+    static void CreateAccount()
     {
-        int damage =
-            player.Attack - monster.Defense;
+        Console.WriteLine("\n===== CREATE ACCOUNT =====");
 
-        if (damage < 1)
+        account = new Account();
+        account.Name = InputString("Enter name: ");
+        account.Balance = 1000;
+
+        totalRounds = 0;
+        wins = 0;
+        losses = 0;
+        biggestWin = 0;
+    }
+
+    static void DisplayMenu()
+    {
+        Console.WriteLine("\n===== BAU CUA GAME =====");
+        Console.WriteLine($"Player: {account.Name}");
+        Console.WriteLine($"Balance: {account.Balance}");
+
+        Console.WriteLine("1. Play");
+        Console.WriteLine("2. View Balance");
+        Console.WriteLine("3. Statistics");
+        Console.WriteLine("0. Exit");
+    }
+
+    static void PlayRound()
+    {
+        Console.WriteLine("\n===== PLACE BET =====");
+
+        ShowAnimals();
+
+        int count = InputInt("How many animals to bet: ", 1, 6);
+
+        List<Bet> bets = new List<Bet>();
+
+        int remaining = account.Balance;
+
+        for (int i = 1; i <= count; i++)
         {
-            damage = 1;
+            if (remaining == 0) break;
+
+            Animal animal;
+
+            while (true)
+            {
+                int pick = InputInt($"Choose animal {i}: ", 1, 6);
+                animal = (Animal)pick;
+
+                if (!IsAlreadyBet(bets, animal))
+                    break;
+
+                Console.WriteLine("Already chosen.");
+            }
+
+            int amount = InputInt(
+                $"Bet for {animal} (remaining {remaining}): ",
+                1,
+                remaining
+            );
+
+            bets.Add(new Bet { Animal = animal, Amount = amount });
+
+            remaining -= amount;
         }
 
-        int chance = random.Next(1, 101);
-        bool criticalHit = chance <= 20;
+        int totalBet = 0;
+        foreach (var b in bets) totalBet += b.Amount;
 
-        if (criticalHit)
+        account.Balance -= totalBet;
+
+        Animal d1 = (Animal)random.Next(1, 7);
+        Animal d2 = (Animal)random.Next(1, 7);
+        Animal d3 = (Animal)random.Next(1, 7);
+
+        Console.WriteLine($"\nResult: {d1} - {d2} - {d3}");
+
+        int totalReturn = 0;
+
+        foreach (var b in bets)
         {
-            damage *= 2;
+            int countAppear = 0;
 
-            Console.WriteLine(
-                $"Critical hit! You dealt {damage} damage."
-            );
+            if (b.Animal == d1) countAppear++;
+            if (b.Animal == d2) countAppear++;
+            if (b.Animal == d3) countAppear++;
+
+            if (countAppear > 0)
+            {
+                int reward = b.Amount * (countAppear + 1);
+                totalReturn += reward;
+
+                Console.WriteLine($"{b.Animal} x{countAppear} → +{reward}");
+            }
+            else
+            {
+                Console.WriteLine($"{b.Animal} lost (-{b.Amount})");
+            }
+        }
+
+        account.Balance += totalReturn;
+
+        int profit = totalReturn - totalBet;
+
+        totalRounds++;
+
+        if (profit > 0)
+        {
+            wins++;
+            Console.WriteLine($"You WIN (+{profit})");
+
+            if (profit > biggestWin)
+                biggestWin = profit;
         }
         else
         {
-            Console.WriteLine(
-                $"You dealt {damage} damage."
-            );
+            losses++;
+            Console.WriteLine($"You LOSE ({profit})");
         }
 
-        monster.Health -= damage;
-
-        Console.WriteLine(
-            $"{monster.Name}'s Health: " +
-            $"{Math.Max(monster.Health, 0)}"
-        );
+        Console.WriteLine($"Balance: {account.Balance}");
     }
 
-    static void MonsterAttack(Monster monster)
+    static bool IsAlreadyBet(List<Bet> bets, Animal animal)
     {
-        int damage =
-            monster.Attack - player.Defense;
-
-        if (damage < 1)
+        foreach (var b in bets)
         {
-            damage = 1;
+            if (b.Animal == animal)
+                return true;
         }
-
-        player.CurrentHealth -= damage;
-
-        Console.WriteLine(
-            $"{monster.Name} dealt {damage} damage."
-        );
-
-        Console.WriteLine(
-            $"Your Health: " +
-            $"{Math.Max(player.CurrentHealth, 0)}" +
-            $"/{player.MaxHealth}"
-        );
+        return false;
     }
 
-    static bool UsePotion()
+    static void ShowAnimals()
     {
-        if (player.PotionCount == 0)
-        {
-            Console.WriteLine("You have no potions left.");
-            return false;
-        }
-
-        if (player.CurrentHealth == player.MaxHealth)
-        {
-            Console.WriteLine(
-                "Your health is already full."
-            );
-
-            return false;
-        }
-
-        int healthBeforeHealing = player.CurrentHealth;
-
-        player.CurrentHealth += 30;
-
-        if (player.CurrentHealth > player.MaxHealth)
-        {
-            player.CurrentHealth = player.MaxHealth;
-        }
-
-        player.PotionCount--;
-
-        int healed =
-            player.CurrentHealth - healthBeforeHealing;
-
-        Console.WriteLine(
-            $"You restored {healed} health."
-        );
-
-        Console.WriteLine(
-            $"Potions remaining: {player.PotionCount}"
-        );
-
-        return true;
+        Console.WriteLine("1. Gourd");
+        Console.WriteLine("2. Crab");
+        Console.WriteLine("3. Shrimp");
+        Console.WriteLine("4. Fish");
+        Console.WriteLine("5. Chicken");
+        Console.WriteLine("6. Deer");
     }
 
-    static void DisplayBattleMenu()
-    {
-        Console.WriteLine("\n===== YOUR TURN =====");
-        Console.WriteLine("1. Attack");
-        Console.WriteLine("2. Heal");
-        Console.WriteLine("3. View Status");
-        Console.WriteLine("4. Run Away");
-    }
-
-    static void DisplayStatistics()
+    static void DisplayStats()
     {
         Console.WriteLine("\n===== STATISTICS =====");
+        Console.WriteLine($"Player: {account.Name}");
+        Console.WriteLine($"Rounds: {totalRounds}");
         Console.WriteLine($"Wins: {wins}");
         Console.WriteLine($"Losses: {losses}");
-        Console.WriteLine($"Escapes: {escapes}");
-        Console.WriteLine($"Total Gold: {player.Gold}");
+        Console.WriteLine($"Biggest Win: {biggestWin}");
+        Console.WriteLine($"Final Balance: {account.Balance}");
     }
 
-    static bool AskYesNo(string message)
+    static string InputString(string msg)
     {
         while (true)
         {
-            Console.Write($"{message} (y/n): ");
+            Console.Write(msg);
+            string input = (Console.ReadLine() ?? "").Trim();
 
-            string answer =
-                (Console.ReadLine() ?? "").Trim().ToLower();
+            if (input != "") return input;
 
-            if (answer == "y")
-            {
-                return true;
-            }
-
-            if (answer == "n")
-            {
-                return false;
-            }
-
-            Console.WriteLine("Please enter only y or n.");
+            Console.WriteLine("Cannot be empty.");
         }
     }
 
-    static string InputString(string message)
+    static int InputInt(string msg, int min, int max)
     {
         while (true)
         {
-            Console.Write(message);
+            Console.Write(msg);
 
-            string input =
-                (Console.ReadLine() ?? "").Trim();
-
-            if (input != "")
-            {
-                return input;
-            }
-
-            Console.WriteLine("Input cannot be empty.");
-        }
-    }
-
-    static int InputInteger(
-        string message,
-        int minValue,
-        int maxValue)
-    {
-        while (true)
-        {
-            Console.Write(message);
-
-            int value;
-
-            if (int.TryParse(Console.ReadLine(), out value) &&
-                value >= minValue &&
-                value <= maxValue)
-            {
-                return value;
-            }
+            if (int.TryParse(Console.ReadLine(), out int val)
+                && val >= min && val <= max)
+                return val;
 
             Console.WriteLine("Invalid input.");
         }
