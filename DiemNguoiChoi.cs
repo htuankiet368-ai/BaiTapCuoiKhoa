@@ -4,6 +4,7 @@ using System.Linq;
 
 class Player
 {
+    
     public string Code;
     public string Name;
     public int Score;
